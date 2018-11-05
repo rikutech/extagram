@@ -14,14 +14,16 @@ defmodule Extagram.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :hound]
+      extra_applications: [:logger, :hound, :httpoison]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:hound, "~> 1.0"}
+      {:hound, "~> 1.0"},
+      {:floki, "~> 0.10.0"},
+      {:httpoison, "~> 0.9.0"}
     ]
   end
 end
