@@ -21,7 +21,7 @@ use Mix.Config
 #     config :logger, level: :info
 #
 
-config :hound, browser: "firefox"
+config :hound, driver: "chrome_driver", browser: "chrome_headless"
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
