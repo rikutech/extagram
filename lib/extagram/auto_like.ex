@@ -4,11 +4,12 @@ defmodule Extagram.AutoLike do
   """
   use Hound.Helpers
 
-  def start do
+  def start(username) do
+    {:ok, _started} = Application.ensure_all_started(:hound)
     Hound.start_session()
     navigate_to("http://instagram.com")
     login()
-    start_like()
+    start_like(username)
     Hound.end_session
   end
 
@@ -19,11 +20,13 @@ defmodule Extagram.AutoLike do
     click({:xpath, "//button[contains(text(), '後で')]"})
   end
 
-  defp start_like do
-    follower_count = 100
+  defp start_like(username) do
+    navigate_to("https://instagram.com/#{username}")
+    %{"id" => userid} = Regex.named_captures(~r/"owner":\{"id":"(?<id>[0-9]*)"/, page_source())
+    follower_count = 1000
     url = "https://www.instagram.com/graphql/query/?"
     |> Kernel.<>("query_hash=56066f031e6239f35a904ac20c9f37d9&")
-    |> Kernel.<>("variables=%7B\"id\"%3A\"3184163038\"%2C\"first\"%3A#{follower_count}%7D")
+    |> Kernel.<>("variables=%7B\"id\"%3A\"#{userid}\"%2C\"first\"%3A#{follower_count}%7D")
     navigate_to(url)
     %{"data" =>
       %{"user" =>
@@ -47,7 +50,13 @@ defmodule Extagram.AutoLike do
     |> Enum.take(3)
     |> Enum.each(fn elem ->
       click(elem)
-      click({:xpath, "//button[contains(@class, 'coreSpriteHeartOpen')]"})
+      with {:ok, btn} <- search_element(:xpath, "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']", 3)
+        do
+          click(btn)
+        else
+          _ -> nil
+      end
+
       click({:xpath, "//div[@role='dialog']/button"})
     end)
   end

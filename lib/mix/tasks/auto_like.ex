@@ -1,5 +1,7 @@
 defmodule Mix.Tasks.AutoLike do
-  def run(_) do
-    Extagram.AutoLike.start
+  use Mix.Task
+
+  def run(username) do
+    Extagram.AutoLike.start(username)
   end
 end
