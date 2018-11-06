@@ -4,16 +4,22 @@ defmodule Extagram.AutoLike do
   """
   use Hound.Helpers
 
-  def start(username) do
+  def launch(usernames) do
     {:ok, _started} = Application.ensure_all_started(:hound)
+    usernames
+    |> Enum.map(&(Task.async(fn -> start(&1) end)))
+    |> Enum.map(&(Task.await(&1, 360_000)))
+  end
+
+  defp start(username) do
     Hound.start_session()
-    navigate_to("http://instagram.com")
     login()
     start_like(username)
-    Hound.end_session
+    Hound.end_session()
   end
 
   defp login do
+    navigate_to("http://instagram.com")
     fill_field({:name, "username"}, System.get_env("INSTAGRAM_USERNAME"))
     fill_field({:name, "password"}, System.get_env("INSTAGRAM_PASSWORD"))
     submit_element({:xpath, "//button[@type='submit']"})
