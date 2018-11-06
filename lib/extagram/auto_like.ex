@@ -57,10 +57,7 @@ defmodule Extagram.AutoLike do
     |> Enum.each(fn elem ->
       click(elem)
       with {:ok, btn} <- search_element(:xpath, "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']", 3)
-        do
-          click(btn)
-        else
-          _ -> nil
+        do click(btn)
       end
 
       click({:xpath, "//div[@role='dialog']/button"})
