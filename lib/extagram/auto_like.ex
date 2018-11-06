@@ -27,26 +27,39 @@ defmodule Extagram.AutoLike do
   end
 
   defp start_like(username) do
+    fetch_follower_list_of(username)
+    |> Enum.each(&like(&1))
+  end
+
+  defp fetch_follower_list_of(username) do
     navigate_to("https://instagram.com/#{username}")
     %{"id" => userid} = Regex.named_captures(~r/"owner":\{"id":"(?<id>[0-9]*)"/, page_source())
     follower_count = 1000
+    varables = %{
+      "first" => 1000,
+    }
     url = "https://www.instagram.com/graphql/query/?"
     |> Kernel.<>("query_hash=56066f031e6239f35a904ac20c9f37d9&")
     |> Kernel.<>("variables=%7B\"id\"%3A\"#{userid}\"%2C\"first\"%3A#{follower_count}%7D")
     navigate_to(url)
     %{"data" =>
       %{"user" =>
-         %{"edge_followed_by" =>
-            %{"edges" => follower_list}
-          }
+	%{"edge_followed_by" => edge_followed_by}
        }
     } = find_element(:tag, "html")
     |> inner_text()
     |> Poison.decode!()
 
+    %{"edges" => follower_list,
+      "count" => count,
+      "page_info" =>
+	%{"has_next_page" => has_next,
+      	  "end_cursor" => after
+      },
+    } = edge_followed_by
+
     follower_list
     |> Enum.map(fn %{"node" => %{"username" => un}} -> un end)
-    |> Enum.each(&like(&1))
   end
 
   defp like(username) do
