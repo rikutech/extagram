@@ -55,7 +55,12 @@ defmodule Extagram.AutoLike do
 	      %{"has_next_page" => has_next,
           "end_cursor" => after_of},
     } = _fetch_edge_followed_by(variables)
-    follower_list ++ _get_follower_list(userid, length(follower_list), has_next, after_of)
+    public_follower_list = follower_list
+    |> Enum.filter(fn
+      %{"node" => %{"is_private" => false}} -> true
+      _ -> false
+    end)
+    public_follower_list ++ _get_follower_list(userid, length(public_follower_list), has_next, after_of)
   end
 
   defp _get_follower_list(userid, count, _has_next = true, after_of) when is_less_than_limit(count) do
@@ -65,7 +70,13 @@ defmodule Extagram.AutoLike do
         %{"has_next_page" => has_next,
           "end_cursor" => after_of}
     } = _fetch_edge_followed_by(variables)
-    follower_list ++ _get_follower_list(userid, count + length(follower_list), has_next, after_of)
+
+    public_follower_list = follower_list
+    |> Enum.filter(fn
+      %{"node" => %{"is_private" => false}} -> true
+      _ -> false
+    end)
+    public_follower_list ++ _get_follower_list(userid, count + length(public_follower_list), has_next, after_of)
   end
 
   defp _get_follower_list(_, _, _has_next = false, _), do: []
