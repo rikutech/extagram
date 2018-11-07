@@ -92,14 +92,16 @@ defmodule Extagram.AutoLike do
     IO.puts "#{username}にいいね中"
     navigate_to("https://instagram.com/#{username}")
 
-    find_all_elements(:xpath, "//article/div/div/div/div/a")
-    |> Enum.take(3)
-    |> Enum.each(
-    fn elem ->
-      click(elem)
-      like_xpath = "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']"
-      with {:ok, btn} <- search_element(:xpath, like_xpath, 1), do: click(btn)
-      with {:ok, btn} <- search_element(:xpath, "//div[@role='dialog']/button", 3), do: click(btn)
-    end)
+    with posts when is_list(posts) <- find_all_elements(:xpath, "//article/div/div/div/div/a") do
+      posts
+      |> Enum.take(3)
+      |> Enum.each(
+      fn elem ->
+        click(elem)
+        like_xpath = "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']"
+        with {:ok, btn} <- search_element(:xpath, like_xpath, 1), do: click(btn)
+        with {:ok, btn} <- search_element(:xpath, "//div[@role='dialog']/button", 3), do: click(btn)
+      end)
+    end
   end
 end
