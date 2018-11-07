@@ -23,6 +23,8 @@ mix deps.get
 ```
 export INSTAGRAM_USERNAME=hoge
 export INSTAGRAM_PASSWORD=fuga
+#いいねするアカウントの数(デフォルトで100)
+export LIKE_TARGET_LIMIT=1000
 ```
 
 ## How to use
