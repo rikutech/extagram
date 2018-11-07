@@ -26,7 +26,9 @@ defmodule Extagram.AutoLike do
     fill_field({:name, "username"}, System.get_env("INSTAGRAM_USERNAME"))
     fill_field({:name, "password"}, System.get_env("INSTAGRAM_PASSWORD"))
     submit_element({:xpath, "//button[@type='submit']"})
-    click({:xpath, "//button[contains(text(), '後で')]"})
+    with {:ok, btn} <- search_element(:xpath, "//button[contains(text(), '後で')]", 3)
+      do click(btn)
+    end
   end
 
   defp start_like(username) do
@@ -90,7 +92,7 @@ defmodule Extagram.AutoLike do
     |> Enum.take(3)
     |> Enum.each(fn elem ->
       click(elem)
-      with {:ok, btn} <- search_element(:xpath, "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']", 3)
+      with {:ok, btn} <- search_element(:xpath, "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']", 1)
         do click(btn)
       end
 
