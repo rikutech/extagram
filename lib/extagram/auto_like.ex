@@ -35,7 +35,11 @@ defmodule Extagram.AutoLike do
     navigate_to("https://instagram.com/#{username}")
     %{"id" => userid} = Regex.named_captures(~r/"owner":\{"id":"(?<id>[0-9]*)"/, page_source())
     get_follower_username_list(userid)
-    |> Enum.each(&like(&1))
+    |> Enum.chunk_every(10)
+    |> Enum.each(fn username_list ->
+      Enum.each(username_list, &like(&1))
+      Process.sleep(10000)
+    end)
   end
 
   defp get_follower_username_list(userid) do
