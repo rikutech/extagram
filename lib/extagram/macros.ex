@@ -5,4 +5,3 @@ defmodule Extagram.Macros do
     quote do: unquote(count) < unquote(limit)
   end
 end
-
