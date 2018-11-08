@@ -123,15 +123,22 @@ defmodule Extagram.AutoLike do
     ja_regex = ~r/[\p{Hiragana}\p{Katakana}]/u
 
     introduction_txt =
-      find_element(:xpath, ~s|//section/main/div/header/section/div[2]/span|)
-      |> inner_text()
+      with {:ok, txt_box} <-
+             search_element(:xpath, "//section/main/div/header/section/div[2]/span") do
+        txt_box |> inner_text()
+      else
+        _ -> ""
+      end
 
     post = List.first(posts)
     click(post)
 
     post_txt =
-      find_element(:xpath, "//article/*//h2/following-sibling::span[1]")
-      |> inner_text()
+      with {:ok, txt_box} <- search_element(:xpath, "//article/*//h2/following-sibling::span[1]") do
+        txt_box |> inner_text()
+      else
+        _ -> ""
+      end
 
     # ひらがな・カタカナが1文字でも含まれていればいいねする
     if Regex.match?(ja_regex, introduction_txt) || Regex.match?(ja_regex, post_txt) do
@@ -151,7 +158,7 @@ defmodule Extagram.AutoLike do
   end
 
   defp _close_modal do
-    with {:ok, btn} <- search_element(:xpath, "//div[@role='dialog']/button", 3),
+    with {:ok, btn} <- search_element(:xpath, "//button[contains(text(), '閉じる')]", 3),
          do: click(btn)
   end
 end
