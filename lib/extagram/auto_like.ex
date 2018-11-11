@@ -16,7 +16,14 @@ defmodule Extagram.AutoLike do
   end
 
   defp start(username) do
-    Hound.start_session()
+    Hound.start_session(
+      additional_capabilities: %{
+        chromeOptions: %{
+          "args" => ["--headless", "--disable-gpu", "--window-size=1920,1080"]
+        }
+      }
+    )
+
     login()
     start_like(username)
     Hound.end_session()
@@ -124,7 +131,7 @@ defmodule Extagram.AutoLike do
 
     introduction_txt =
       with {:ok, txt_box} <-
-             search_element(:xpath, "//section/main/div/header/section/div[2]/span") do
+             search_element(:xpath, "//section/main/div/header/section/div[2]/span", 3) do
         txt_box |> inner_text()
       else
         _ -> ""
@@ -134,7 +141,8 @@ defmodule Extagram.AutoLike do
     click(post)
 
     post_txt =
-      with {:ok, txt_box} <- search_element(:xpath, "//article/*//h2/following-sibling::span[1]") do
+      with {:ok, txt_box} <-
+             search_element(:xpath, "//article/*//h2/following-sibling::span[1]", 3) do
         txt_box |> inner_text()
       else
         _ -> ""
@@ -147,18 +155,26 @@ defmodule Extagram.AutoLike do
       posts
       |> Enum.take(3)
       |> Enum.each(&_like_each(&1))
+    else
+      IO.puts("日本人ではない可能性が高いのでいいねしません")
     end
   end
 
   defp _like_each(post) do
     click(post)
-    like_xpath = "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='いいね！']"
-    with {:ok, btn} <- search_element(:xpath, like_xpath, 1), do: click(btn)
+    like_xpath = "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='Like']"
+
+    with {:ok, btn} <- search_element(:xpath, like_xpath, 1) do
+      click(btn)
+    else
+      _ -> IO.puts("いいね済の投稿です")
+    end
+
     _close_modal()
   end
 
   defp _close_modal do
-    with {:ok, btn} <- search_element(:xpath, "//button[contains(text(), '閉じる')]", 3),
+    with {:ok, btn} <- search_element(:xpath, "//button[contains(text(), 'Close')]", 3),
          do: click(btn)
   end
 end

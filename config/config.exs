@@ -20,7 +20,6 @@ use Mix.Config
 #
 #     config :logger, level: :info
 #
-
 config :hound, driver: "chrome_driver", browser: "chrome_headless"
 
 # It is also possible to import configuration files, relative to this
