@@ -16,13 +16,17 @@ defmodule Extagram.AutoLike do
   end
 
   defp start(username) do
-    Hound.start_session(
-      additional_capabilities: %{
-        chromeOptions: %{
-          "args" => ["--headless", "--disable-gpu", "--window-size=1920,1080"]
+    if System.get_env("HEADLESS_MODE") == "true" do
+      Hound.start_session(
+        additional_capabilities: %{
+          chromeOptions: %{
+            "args" => ["--headless", "--disable-gpu", "--window-size=1920,1080"]
+          }
         }
-      }
-    )
+      )
+    else
+      Hound.start_session()
+    end
 
     login()
     start_like(username)
@@ -49,6 +53,7 @@ defmodule Extagram.AutoLike do
     |> Enum.chunk_every(10)
     |> Enum.each(fn username_list ->
       Enum.each(username_list, &like(&1))
+      IO.puts("10秒のインターバルに入ります…")
       Process.sleep(10000)
     end)
   end
@@ -162,7 +167,9 @@ defmodule Extagram.AutoLike do
 
   defp _like_each(post) do
     click(post)
-    like_xpath = "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='Like']"
+
+    like_xpath =
+      "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='Like' or @aria-label='いいね！']"
 
     with {:ok, btn} <- search_element(:xpath, like_xpath, 1) do
       click(btn)
@@ -174,7 +181,9 @@ defmodule Extagram.AutoLike do
   end
 
   defp _close_modal do
-    with {:ok, btn} <- search_element(:xpath, "//button[contains(text(), 'Close')]", 3),
+    btn_xpath = "//button[contains(text(), 'Close') or contains(text(), '閉じる')]"
+
+    with {:ok, btn} <- search_element(:xpath, btn_xpath, 3),
          do: click(btn)
   end
 end
