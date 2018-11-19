@@ -216,7 +216,12 @@ defmodule Extagram.AutoLike do
 
     with {:ok, btn} <- search_element(:xpath, like_xpath, 1) do
       click(btn)
-      send(@count_process_name, {})
+
+      if Regex.match?(~r/400/, fetch_log()) do
+        IO.puts("いいね規制にかかっています＼(^o^)／")
+      else
+        send(@count_process_name, {})
+      end
     else
       _ -> IO.puts("いいね済の投稿です")
     end
