@@ -2,11 +2,13 @@ defmodule Extagram.AutoLike do
   @moduledoc """
   Start random autoLike on instagram
   """
+  @count_process_name :count
   use Hound.Helpers
   import Extagram.Macros
 
   def launch(usernames) do
     {:ok, _started} = Application.ensure_all_started(:hound)
+    launch_like_count_process()
 
     usernames
     |> Enum.each(fn username ->
@@ -21,6 +23,20 @@ defmodule Extagram.AutoLike do
     |> Enum.each(&start_like(&1))
 
     username
+  end
+
+  defp launch_like_count_process do
+    pid = spawn(Extagram.AutoLike, :count_like, [0])
+    Process.register(pid, @count_process_name)
+  end
+
+  def count_like(count) do
+    receive do
+      _ ->
+        incremented = count + 1
+        IO.puts("現在#{incremented}いいね")
+        count_like(incremented)
+    end
   end
 
   defp open_browser_and_login do
@@ -200,6 +216,7 @@ defmodule Extagram.AutoLike do
 
     with {:ok, btn} <- search_element(:xpath, like_xpath, 1) do
       click(btn)
+      send(@count_process_name, {})
     else
       _ -> IO.puts("いいね済の投稿です")
     end
