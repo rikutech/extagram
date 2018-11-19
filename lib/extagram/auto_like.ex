@@ -16,6 +16,14 @@ defmodule Extagram.AutoLike do
   end
 
   defp start(username) do
+    get_follower_username_list(username)
+    |> Enum.chunk_every(100)
+    |> Enum.each(&start_like(&1))
+
+    username
+  end
+
+  defp open_browser_and_login do
     if System.get_env("HEADLESS_MODE") == "true" do
       Hound.start_session(
         additional_capabilities: %{
@@ -29,10 +37,9 @@ defmodule Extagram.AutoLike do
     end
 
     login()
-    start_like(username)
-    Hound.end_session()
-    username
   end
+
+  defp close_browser, do: Hound.end_session()
 
   defp login do
     navigate_to("http://instagram.com")
@@ -45,18 +52,28 @@ defmodule Extagram.AutoLike do
     end
   end
 
-  defp start_like(username) do
+  defp start_like(usernames) do
+    open_browser_and_login()
+
+    Enum.shuffle(usernames)
+    |> Enum.each(&like(&1))
+
+    close_browser()
+  end
+
+  defp get_follower_username_list(username) do
+    IO.puts("フォロワー情報を取得中です…")
+    open_browser_and_login()
     navigate_to("https://instagram.com/#{username}")
     %{"id" => userid} = Regex.named_captures(~r/"owner":\{"id":"(?<id>[0-9]*)"/, page_source())
 
-    get_follower_username_list(userid)
-    |> Enum.shuffle()
-    |> Enum.each(&like(&1))
-  end
+    usernames =
+      _get_follower_list(userid, 0)
+      |> Enum.map(fn %{"node" => %{"username" => un}} -> un end)
 
-  defp get_follower_username_list(userid) do
-    _get_follower_list(userid, 0)
-    |> Enum.map(fn %{"node" => %{"username" => un}} -> un end)
+    close_browser()
+    IO.puts("#{length(usernames)}人にいいねを開始します")
+    usernames
   end
 
   defp _get_follower_list(userid, _initial_count = 0) do
@@ -154,7 +171,7 @@ defmodule Extagram.AutoLike do
     _like_each()
   end
 
-  defp _like(_) do
+  defp _like(_modal_appeared = false) do
     IO.puts("規制に入ったため30秒のインターバルを取ります…")
     Process.sleep(30_000)
     IO.puts("インターバル終了")
