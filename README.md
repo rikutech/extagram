@@ -25,6 +25,8 @@ export INSTAGRAM_USERNAME=hoge
 export INSTAGRAM_PASSWORD=fuga
 #いいねするアカウントの数(デフォルトで100)
 export LIKE_TARGET_LIMIT=1000
+#デフォルトではヘッドレスモード(バックグラウンド動作)だが、以下を指定でウィンドウが立ち上がる
+#export HEADLESS_MODE=false
 ```
 
 ## How to use
@@ -34,7 +36,7 @@ export LIKE_TARGET_LIMIT=1000
 chromedriver
 ```
 
-2.extagram実行 複数アカウントを指定するとその分ブラウザが複数立ち上がる
+2.extagram実行 複数アカウントを指定すると順番にいいねを始める
 ```sh
 mix auto_like username1 username2
 ```

@@ -24,7 +24,9 @@ defmodule Extagram.AutoLike do
   end
 
   defp open_browser_and_login do
-    if System.get_env("HEADLESS_MODE") == "true" do
+    if System.get_env("HEADLESS_MODE") == "false" do
+      Hound.start_session()
+    else
       Hound.start_session(
         additional_capabilities: %{
           chromeOptions: %{
@@ -32,8 +34,6 @@ defmodule Extagram.AutoLike do
           }
         }
       )
-    else
-      Hound.start_session()
     end
 
     login()
