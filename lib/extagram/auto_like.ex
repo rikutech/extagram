@@ -9,7 +9,10 @@ defmodule Extagram.AutoLike do
     {:ok, _started} = Application.ensure_all_started(:hound)
 
     usernames
-    |> Enum.map(&start(&1))
+    |> Enum.each(fn username ->
+      start(username)
+      IO.puts("#{username}のフォロワーへのいいねが完了しました")
+    end)
   end
 
   defp start(username) do
@@ -120,7 +123,12 @@ defmodule Extagram.AutoLike do
     IO.puts("#{username}にいいね中")
     navigate_to("https://instagram.com/#{username}")
     posts = find_all_elements(:xpath, "//article/div/div/div/div/a")
-    if is_list(posts) and length(posts) > 0, do: _prepare_like(List.first(posts))
+
+    if is_list(posts) and length(posts) > 0 do
+      _prepare_like(List.first(posts))
+    else
+      IO.puts("投稿が1件もないのでスキップします")
+    end
   end
 
   defp _prepare_like(post) do
@@ -134,7 +142,7 @@ defmodule Extagram.AutoLike do
     if Regex.match?(ja_regex, introduction_txt) || Regex.match?(ja_regex, post_txt) do
       _like(modal_appeared)
     else
-      IO.puts("日本人ではない可能性が高いのでいいねしません")
+      IO.puts("日本人ではない可能性が高いのでスキップします")
     end
   end
 
