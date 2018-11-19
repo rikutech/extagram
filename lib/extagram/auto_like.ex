@@ -9,10 +9,7 @@ defmodule Extagram.AutoLike do
     {:ok, _started} = Application.ensure_all_started(:hound)
 
     usernames
-    |> Enum.map(&Task.async(fn -> start(&1) end))
-    # 最長1時間動作
-    |> Enum.map(&Task.await(&1, 3600_000))
-    |> Enum.each(&IO.puts("#{&1}のフォロワーへのいいね完了"))
+    |> Enum.map(&start(&1))
   end
 
   defp start(username) do
@@ -50,12 +47,8 @@ defmodule Extagram.AutoLike do
     %{"id" => userid} = Regex.named_captures(~r/"owner":\{"id":"(?<id>[0-9]*)"/, page_source())
 
     get_follower_username_list(userid)
-    |> Enum.chunk_every(10)
-    |> Enum.each(fn username_list ->
-      Enum.each(username_list, &like(&1))
-      IO.puts("10秒のインターバルに入ります…")
-      Process.sleep(10000)
-    end)
+    |> Enum.shuffle()
+    |> Enum.each(&like(&1))
   end
 
   defp get_follower_username_list(userid) do
@@ -103,7 +96,6 @@ defmodule Extagram.AutoLike do
       _get_follower_list(userid, count + length(public_follower_list), has_next, after_of)
   end
 
-  defp _get_follower_list(_, _, _has_next = false, _), do: []
   defp _get_follower_list(_, _, _, _), do: []
 
   defp _fetch_edge_followed_by(variables) do
@@ -127,47 +119,57 @@ defmodule Extagram.AutoLike do
   defp like(username) do
     IO.puts("#{username}にいいね中")
     navigate_to("https://instagram.com/#{username}")
-    elems = find_all_elements(:xpath, "//article/div/div/div/div/a")
-    with posts when is_list(posts) and length(posts) > 0 <- elems, do: _like(posts)
+    posts = find_all_elements(:xpath, "//article/div/div/div/div/a")
+    if is_list(posts) and length(posts) > 0, do: _prepare_like(List.first(posts))
   end
 
-  defp _like(posts) do
-    ja_regex = ~r/[\p{Hiragana}\p{Katakana}]/u
-
-    introduction_txt =
-      with {:ok, txt_box} <-
-             search_element(:xpath, "//section/main/div/header/section/div[2]/span", 3) do
-        txt_box |> inner_text()
-      else
-        _ -> ""
-      end
-
-    post = List.first(posts)
+  defp _prepare_like(post) do
+    introduction_txt = find_introduction_txt()
     click(post)
-
-    post_txt =
-      with {:ok, txt_box} <-
-             search_element(:xpath, "//article/*//h2/following-sibling::span[1]", 3) do
-        txt_box |> inner_text()
-      else
-        _ -> ""
-      end
+    post_txt = find_post_txt()
+    ja_regex = ~r/[\p{Hiragana}\p{Katakana}]/u
+    modal_appeared = match?({:ok, _}, search_element(:xpath, "//div[@role='dialog']//article"))
 
     # ひらがな・カタカナが1文字でも含まれていればいいねする
     if Regex.match?(ja_regex, introduction_txt) || Regex.match?(ja_regex, post_txt) do
-      _close_modal()
-
-      posts
-      |> Enum.take(3)
-      |> Enum.each(&_like_each(&1))
+      _like(modal_appeared)
     else
       IO.puts("日本人ではない可能性が高いのでいいねしません")
     end
   end
 
-  defp _like_each(post) do
-    click(post)
+  defp _like(_modal_appeared = true) do
+    _like_each()
+    _go_next_post()
+    _like_each()
+    _go_next_post()
+    _like_each()
+  end
 
+  defp _like(_) do
+    IO.puts("規制に入ったため30秒のインターバルを取ります…")
+    Process.sleep(30_000)
+    IO.puts("インターバル終了")
+  end
+
+  defp find_introduction_txt() do
+    with {:ok, txt_box} <-
+           search_element(:xpath, "//section/main/div/header/section/div[2]/span", 3) do
+      txt_box |> inner_text()
+    else
+      _ -> ""
+    end
+  end
+
+  defp find_post_txt() do
+    with {:ok, txt_box} <- search_element(:xpath, "//article/*//h2/following-sibling::span[1]", 3) do
+      txt_box |> inner_text()
+    else
+      _ -> ""
+    end
+  end
+
+  defp _like_each() do
     like_xpath =
       "//button[contains(@class, 'coreSpriteHeartOpen')]/span[@aria-label='Like' or @aria-label='いいね！']"
 
@@ -176,12 +178,10 @@ defmodule Extagram.AutoLike do
     else
       _ -> IO.puts("いいね済の投稿です")
     end
-
-    _close_modal()
   end
 
-  defp _close_modal do
-    btn_xpath = "//button[contains(text(), 'Close') or contains(text(), '閉じる')]"
+  defp _go_next_post do
+    btn_xpath = "//a[contains(text(), 'Next') or contains(text(), '次へ')]"
 
     with {:ok, btn} <- search_element(:xpath, btn_xpath, 3),
          do: click(btn)
