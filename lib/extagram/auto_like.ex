@@ -72,7 +72,12 @@ defmodule Extagram.AutoLike do
     open_browser_and_login()
 
     Enum.shuffle(usernames)
-    |> Enum.each(&like(&1))
+    |> Enum.chunk_every(10)
+    |> Enum.each(fn ten_usernames ->
+      Enum.each(ten_usernames, &like(&1))
+      IO.puts("1分の休憩に入ります…")
+      Process.sleep(60_000)
+    end)
 
     close_browser()
   end
@@ -144,12 +149,16 @@ defmodule Extagram.AutoLike do
 
     navigate_to(url)
 
-    %{"data" => %{"user" => %{"edge_followed_by" => edge_followed_by}}} =
-      find_element(:tag, "html")
-      |> inner_text()
-      |> Poison.decode!()
+    result = find_element(:tag, "html")
+    |> inner_text()
+    |> Poison.decode!()
 
-    edge_followed_by
+    with %{"data" => %{"user" => %{"edge_followed_by" => edge_followed_by}}} <- result do
+      edge_followed_by
+    else
+      #HACK: 規制等で失敗したときの暫定対処
+      _ -> %{"edges" => [], "page_info" => %{"has_next_page" => false, "end_cursor" => ""}}
+    end
   end
 
   defp like(username) do
