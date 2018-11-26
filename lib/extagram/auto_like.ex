@@ -149,15 +149,17 @@ defmodule Extagram.AutoLike do
 
     navigate_to(url)
 
-    result = find_element(:tag, "html")
-    |> inner_text()
-    |> Poison.decode!()
+    result =
+      find_element(:tag, "html")
+      |> inner_text()
+      |> Poison.decode!()
 
     with %{"data" => %{"user" => %{"edge_followed_by" => edge_followed_by}}} <- result do
       edge_followed_by
     else
-      #HACK: 規制等で失敗したときの暫定対処
-      _ -> %{"edges" => [], "page_info" => %{"has_next_page" => false, "end_cursor" => ""}}
+      # HACK: 規制等で失敗したときの暫定対処
+      _ ->
+        %{"edges" => [], "page_info" => %{"has_next_page" => false, "end_cursor" => ""}}
     end
   end
 
@@ -190,10 +192,10 @@ defmodule Extagram.AutoLike do
 
   defp _like(_modal_appeared = true) do
     _like_each()
+    Process.sleep(1_000)
     _go_next_post()
     _like_each()
-    _go_next_post()
-    _like_each()
+    Process.sleep(1_000)
   end
 
   defp _like(_modal_appeared = false) do
