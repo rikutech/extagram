@@ -19,6 +19,7 @@ defmodule Extagram.AutoLike do
 
   defp start(username) do
     get_follower_username_list(username)
+    |> Enum.shuffle()
     |> Enum.chunk_every(100)
     |> Enum.each(&start_like(&1))
 
@@ -71,7 +72,7 @@ defmodule Extagram.AutoLike do
   defp start_like(usernames) do
     open_browser_and_login()
 
-    Enum.shuffle(usernames)
+    usernames
     |> Enum.chunk_every(10)
     |> Enum.each(fn ten_usernames ->
       Enum.each(ten_usernames, &like(&1))
